@@ -1,0 +1,53 @@
+{
+  "grupos": {
+    "A": [
+      "Ayuda, por favor",
+      "Llama a la policía",
+      "Necesito un médico",
+      "Estoy herido",
+      "¿Dónde está el hospital?",
+      "Es una emergencia",
+      "Incendio",
+      "¡Alto!",
+      "Estoy sangrando",
+      "¿Necesitas ayuda?",
+      "¿Dónde está la salida?",
+      "Auxilio",
+      "Socorro"
+    ],
+    "B": [
+      "Hola",
+      "¿Cómo estás?",
+      "Buenos días",
+      "Buenas tardes",
+      "Buenas noches",
+      "Bienvenido",
+      "Mucho gusto",
+      "¿Cómo te llamas?",
+      "Me llamo",
+      "Nos vemos",
+      "Me voy",
+      "Adiós",
+      "Hasta luego"
+    ],
+    "C": [
+      "Gracias",
+      "Muchas gracias",
+      "Te lo agradezco",
+      "Bien",
+      "Mal",
+      "Soy sordo",
+      "Entiendo",
+      "No entiendo",
+      "Sí",
+      "No",
+      "No lo sé",
+      "Perdón",
+      "Disculpa",
+      "Lo siento",
+      "De acuerdo",
+      "Vale",
+      "Espera"
+    ]
+  }
+}
