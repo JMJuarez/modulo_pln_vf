@@ -96,6 +96,23 @@ class QueryResponse(BaseModel):
         None,
         description="Número total de caracteres deletreados"
     )
+    # Campos nuevos para detección de nombres en patrones como "Me llamo [NOMBRE]"
+    nombre_detectado: bool | None = Field(
+        None,
+        description="Indica si se detectó un patrón con nombre (ej: 'Me llamo Juan', 'Mi nombre es Pedro')"
+    )
+    nombre_extraido: str | None = Field(
+        None,
+        description="Nombre extraído del patrón si nombre_detectado es true"
+    )
+    nombre_deletreado: List[str] | None = Field(
+        None,
+        description="Lista de caracteres del nombre para deletrear si nombre_detectado es true"
+    )
+    total_caracteres_nombre: int | None = Field(
+        None,
+        description="Número total de caracteres del nombre"
+    )
 
     class Config:
         json_schema_extra = {
@@ -353,7 +370,12 @@ async def buscar_frase_similar(request: QueryRequest):
             similitud=resultado["similitud"],
             deletreo_activado=resultado["deletreo_activado"],
             deletreo=resultado.get("deletreo"),
-            total_caracteres=resultado.get("total_caracteres")
+            total_caracteres=resultado.get("total_caracteres"),
+            # Campos nuevos para detección de nombres
+            nombre_detectado=resultado.get("nombre_detectado"),
+            nombre_extraido=resultado.get("nombre_extraido"),
+            nombre_deletreado=resultado.get("nombre_deletreado"),
+            total_caracteres_nombre=resultado.get("total_caracteres_nombre")
         )
 
         if resultado["deletreo_activado"]:
