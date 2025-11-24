@@ -205,3 +205,77 @@ class TestSpellOutActivation:
         assert result["deletreo_activado"] is False
         assert result["grupo"] is not None
         assert result["deletreo"] is None
+
+
+class TestNamePatternDetection:
+    """Tests para la detección de patrones con nombres."""
+
+    def test_me_llamo_pattern(self, matcher):
+        """Detectar patrón 'Me llamo [NOMBRE]'."""
+        result = matcher.search_similar_phrase("Me llamo Juan")
+
+        assert result["grupo"] == "B"
+        assert result["frase_similar"] == "Me llamo"
+        assert result["deletreo_activado"] is False
+        assert result.get("nombre_detectado") is True
+        assert result.get("nombre_extraido") == "Juan"
+        assert result.get("nombre_deletreado") == ["J", "U", "A", "N"]
+        assert result.get("total_caracteres_nombre") == 4
+
+    def test_mi_nombre_es_pattern(self, matcher):
+        """Detectar patrón 'Mi nombre es [NOMBRE]'."""
+        result = matcher.search_similar_phrase("Mi nombre es Pedro")
+
+        assert result["grupo"] == "B"
+        assert result["frase_similar"] == "Me llamo"
+        assert result["deletreo_activado"] is False
+        assert result.get("nombre_detectado") is True
+        assert result.get("nombre_extraido") == "Pedro"
+        assert result.get("nombre_deletreado") == ["P", "E", "D", "R", "O"]
+        assert result.get("total_caracteres_nombre") == 5
+
+    def test_mi_nombre_es_alessandro(self, matcher):
+        """Detectar patrón 'mi nombre es Alessandro'."""
+        result = matcher.search_similar_phrase("mi nombre es Alessandro")
+
+        assert result["grupo"] == "B"
+        assert result["frase_similar"] == "Me llamo"
+        assert result.get("nombre_detectado") is True
+        assert result.get("nombre_extraido") == "Alessandro"
+        assert result.get("nombre_deletreado") == ["A", "L", "E", "S", "S", "A", "N", "D", "R", "O"]
+        assert result.get("total_caracteres_nombre") == 10
+
+    def test_me_llamo_compound_name(self, matcher):
+        """Detectar nombres compuestos."""
+        result = matcher.search_similar_phrase("Me llamo Juan Carlos")
+
+        assert result["grupo"] == "B"
+        assert result.get("nombre_detectado") is True
+        assert result.get("nombre_extraido") == "Juan Carlos"
+        assert len(result.get("nombre_deletreado", [])) > 4
+
+    def test_no_name_detection_for_normal_greeting(self, matcher):
+        """No detectar nombre en saludos normales."""
+        result = matcher.search_similar_phrase("Hola")
+
+        assert result["grupo"] == "B"
+        assert result["frase_similar"] == "Hola"
+        assert result.get("nombre_detectado") is None
+        assert result.get("nombre_extraido") is None
+
+    def test_no_name_detection_for_help(self, matcher):
+        """No detectar nombre en frases de ayuda."""
+        result = matcher.search_similar_phrase("Necesito ayuda")
+
+        assert result["grupo"] == "A"
+        assert result.get("nombre_detectado") is None
+        assert result.get("nombre_extraido") is None
+
+    def test_solo_nombre_activa_deletreo_normal(self, matcher):
+        """Solo el nombre (sin 'me llamo') debe activar deletreo normal."""
+        result = matcher.search_similar_phrase("Alessandro")
+
+        # Debe activar deletreo normal, NO detección de nombre
+        assert result["deletreo_activado"] is True
+        assert result.get("nombre_detectado") is None
+        assert result["deletreo"] is not None
