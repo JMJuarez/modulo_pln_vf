@@ -3,10 +3,79 @@ from pydantic import BaseModel, Field
 from typing import Dict, List
 import logging
 import uvicorn
-
+from fastapi.middleware.cors import CORSMiddleware # IMPORTAR
 from .matcher_improved import ImprovedPhraseMatcher as PhraseMatcher
 from .groups import get_all_phrases
 from .preprocess import spell_out_text
+
+URLS_VIDEOS: Dict[str, str] = {
+    "Ayuda, por favor": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Ayuda_por_favor.mp4",
+    "Llama a la policía": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Llama_policia.mp4",
+    "Necesito un médico": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Necesito_un_medico.mp4",
+    "Estoy herido": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Estoy_herido.mp4",
+    "¿Dónde está el hospital?": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Dondeestaelhospital.mp4",
+    "Es una emergencia": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Es_una_emergencia.mp4",
+    "¿Necesitas ayuda?": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/necesitasayuda.mp4",
+    "¿Dónde está la salida": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Donde_esta_la_salida.mp4",
+    "¡Fuego! ¡Fuego!": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Incendio.mp4",
+    "Estoy sangrando": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Estoy_sangrando.mp4",
+    "Alto": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_emergencias/Alto.mp4",
+    "Hola": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Hola.mp4",
+    "Buenos días": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Buenos_dias.mp4",
+    "Buenas tardes": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Buenas_tardes.mp4",
+    "Buenas noches": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/buenas_noches.mp4",
+    "¿Cómo estás?": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Como_estas.mp4",
+    "Bienvenido": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Bienvenido.mp4",
+    "Encantado de conocerte": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Mucho_gusto.mp4",
+    "¿Cómo te llamas?": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Como_te_llamas.mp4",
+    "Me llamo": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Me_llamo.mp4",
+    "Nos vemos": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Nos_vemos.mp4",
+    "Me voy": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_saludos/Me_voy.mp4",
+    "Gracias": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/Gracias.mp4",
+    "Soy sordo": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/Soy+sordo.mp4",
+    "Sí": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/sI.mp4",
+    "No": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/No.mp4",
+    "Bien": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/Bien.mp4",
+    "No lo sé": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/Nolose.mp4",
+    "Perdón": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/Perdon.mp4",
+    "Entiendo": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/Entiendo.mp4",
+    "Mal": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/Mal.mp4",
+    "No entiendo": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_agradecimientos/No+entiendo.mp4",
+}
+
+SPELL_URLS: Dict[str, str] = {
+    "A": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/a.mp4",
+    "B": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/b.mp4",
+    "C": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/c.mp4",
+    "CH": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/ch.mp4",
+    "D": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/d.mp4",
+    "E": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/e.mp4",
+    "F": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/f.mp4",
+    "G": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/g.mp4",
+    "H": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/h.mp4",
+    "I": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/i.mp4",
+    "J": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/j.mp4",
+    "K": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/k.mp4",
+    "L": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/l.mp4",
+    "LL": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/ll.mp4",
+    "M": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/m.mp4",
+    "N": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/n.mp4",
+    "Ñ": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/ñ.mp4",
+    "O": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/o.mp4",
+    "P": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/p.mp4",
+    "Q": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/q.mp4",
+    "R": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/r.mp4",
+    "RR": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/rr.mp4",
+    "S": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/s.mp4",
+    "T": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/t.mp4",
+    "U": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/u.mp4",
+    "V": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/v.mp4",
+    "W": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/w.mp4",
+    "X": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/x.mp4",
+    "Y": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/y.mp4",
+    "Z": "https://singai-bucket-videos.s3.us-east-2.amazonaws.com/videos_abecedario/z.mp4",
+
+}
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -40,8 +109,25 @@ app = FastAPI(
     license_info={
         "name": "MIT",
     },
+    
+    
 )
 
+origins = [
+    "http://192.168.0.159:8081",  # Dirección de tu servidor Metro/Web de Expo
+    "http://localhost:8081",
+    "http://127.0.0.1:8000",
+    "http://10.0.2.2:8000",      # IP común para emuladores Android
+    "*"                          # Usar '*' si el entorno es controlado (por si la IP cambia)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Por ahora, usa '*' para desarrollo
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Instancia global del matcher
 matcher = None
 
@@ -96,22 +182,16 @@ class QueryResponse(BaseModel):
         None,
         description="Número total de caracteres deletreados"
     )
-    # Campos nuevos para detección de nombres en patrones como "Me llamo [NOMBRE]"
-    nombre_detectado: bool | None = Field(
-        None,
-        description="Indica si se detectó un patrón con nombre (ej: 'Me llamo Juan', 'Mi nombre es Pedro')"
+    
+    url_video: str = Field(
+        "",
+        description="URL del video LSM de la frase similar. Vacío si se activa deletreo o no se encuentra URL."
     )
-    nombre_extraido: str | None = Field(
+    
+    spell_urls: List[str] | None = Field(
         None,
-        description="Nombre extraído del patrón si nombre_detectado es true"
-    )
-    nombre_deletreado: List[str] | None = Field(
-        None,
-        description="Lista de caracteres del nombre para deletrear si nombre_detectado es true"
-    )
-    total_caracteres_nombre: int | None = Field(
-        None,
-        description="Número total de caracteres del nombre"
+        description="Lista de URLs de videos para la secuencia de deletreo si deletreo_activado es true."
+
     )
 
     class Config:
@@ -351,6 +431,7 @@ async def root():
         500: {"description": "Error interno del servidor"}
     }
 )
+
 async def buscar_frase_similar(request: QueryRequest):
     """Busca la frase más similar al texto proporcionado usando PLN avanzado."""
     if matcher is None:
@@ -362,7 +443,38 @@ async def buscar_frase_similar(request: QueryRequest):
     try:
         logger.info(f"Buscando similitud para: {request.texto}")
         resultado = matcher.search_similar_phrase(request.texto)
+        
+        frase_similar_key = resultado["frase_similar"]
+        
+        # ⭐️ CORRECCIÓN 1: Inicializar ambas variables antes del bloque IF
+        url_del_video = ""
+        spell_urls_list = None
+        # -----------------------------------------------------------
+        
+        if resultado["deletreo_activado"]:
+            
+            # ⭐️ LÓGICA DE URLS DE DELETREO (DESCOMENTADA Y CORREGIDA) ⭐️
+            deletreo_list = resultado.get("deletreo", [])
+            
+            # Mapear cada elemento del deletreo (H, A, M, LL, etc.) a su URL
+            spell_urls_list = [
+                SPELL_URLS.get(letra, "") 
+                for letra in deletreo_list
+                if SPELL_URLS.get(letra) # Asegurar que solo se incluyan URLs válidas
+            ]
+            
+            # Si el deletreo está activo, url_video se mantiene vacío
+            url_del_video = "" 
+            # ⭐️ FIN LÓGICA DE URLS DE DELETREO ⭐️
+            
+        else:
+            # Lógica normal de búsqueda de URL de frase (solo se ejecuta si NO hay deletreo)
+            url_del_video = URLS_VIDEOS.get(frase_similar_key, "")
+            
+            if not url_del_video:
+                logger.warning(f"URL de video NO encontrada para la frase: {frase_similar_key}")
 
+        # ⭐️ CORRECCIÓN 2: Usar las variables inicializadas/asignadas ⭐️
         response = QueryResponse(
             query=resultado["query"],
             grupo=resultado["grupo"],
@@ -371,24 +483,22 @@ async def buscar_frase_similar(request: QueryRequest):
             deletreo_activado=resultado["deletreo_activado"],
             deletreo=resultado.get("deletreo"),
             total_caracteres=resultado.get("total_caracteres"),
-            # Campos nuevos para detección de nombres
-            nombre_detectado=resultado.get("nombre_detectado"),
-            nombre_extraido=resultado.get("nombre_extraido"),
-            nombre_deletreado=resultado.get("nombre_deletreado"),
-            total_caracteres_nombre=resultado.get("total_caracteres_nombre")
+
+            url_video=url_del_video, 
+            spell_urls=spell_urls_list # Usa la variable que ya inicializamos/asignamos
         )
+        # -----------------------------------------------------------
 
         if resultado["deletreo_activado"]:
-            logger.info(f"Resultado: {response.grupo} - {response.similitud} (DELETREO ACTIVADO)")
+            logger.info(f"Resultado: {response.grupo} - {response.similitud} (DELETREO ACTIVADO) - {len(spell_urls_list or [])} URLs")
         else:
-            logger.info(f"Resultado: {response.grupo} - {response.similitud}")
+            logger.info(f"Resultado: {response.grupo} - {response.similitud} - URL: {url_del_video[:40]}...")
 
         return response
 
     except Exception as e:
         logger.error(f"Error al buscar frase similar: {e}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
-
 
 @app.get(
     "/grupos",

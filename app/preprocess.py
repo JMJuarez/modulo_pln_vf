@@ -200,13 +200,32 @@ def spell_out_text(text: str, include_spaces: bool = True) -> List[str]:
         return []
 
     result = []
-
-    for char in text:
+    i=0
+    text_upper = text.upper()
+    while i < len(text_upper):
+        char = text_upper[i]
+        if i + 1 < len(text_upper) and text_upper[i:i+2] == 'LL':
+            result.append('LL')
+            i += 2
+            continue
+        
+        # 2. Comprobar 'RR'
+        if i + 1 < len(text_upper) and text_upper[i:i+2] == 'RR':
+            result.append('RR')
+            i += 2
+            continue
+        
+        # 3. Comprobar 'CH'
+        if i + 1 < len(text_upper) and text_upper[i:i+2] == 'CH':
+            result.append('CH')
+            i += 2
+            continue
+        
         if char == ' ':
             if include_spaces:
                 result.append("espacio")
         elif char.isalpha():
-            result.append(char.upper())
+            result.append(char)
         elif char.isdigit():
             result.append(char)
         else:
@@ -240,5 +259,5 @@ def spell_out_text(text: str, include_spaces: bool = True) -> List[str]:
                 "'": 'comilla simple',
             }
             result.append(special_chars.get(char, f"carácter especial: {char}"))
-
+        i += 1
     return result
