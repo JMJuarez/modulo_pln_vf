@@ -261,3 +261,28 @@ Desktop.ini
 repo_original_info.txt
 historial_commits_original.txt
 remote_backup.txt
+
+# ============================================
+# Test Reports & Results (DO NOT COMMIT)
+# ============================================
+
+# Pytest reports
+test_reports/
+junit*.xml
+report*.html
+
+# Stress test results
+stress_results/
+locust_*.csv
+locust_*.html
+
+# Benchmark results
+.benchmarks/
+# Documentation temp files (personal notes)
+DOCUMENTACION_TECNICA*.txt
+
+
+
+
+
+
