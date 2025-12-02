@@ -282,6 +282,17 @@ locust_*.html
 # Documentation temp files (personal notes)
 DOCUMENTACION_TECNICA*.txt
 
+# Documentación personal de tesis (local only)
+ARQUITECTURA_SOFTWARE.md
+DOCUMENTACION_PRUEBAS.txt
+DOCUMENTACION_PRUEBAS_REAL.txt
+DOCUMENTACION_PRUEBAS_TESIS.txt
+GUIA_DEFENSA_TESIS.md
+RESUMEN_PRUEBAS.txt
+
+# Diagramas (local only)
+diagramas/
+
 
 
 
