@@ -374,104 +374,6 @@ class ImprovedPhraseMatcher:
 
         return best_group, best_phrase, best_similarity
 
-    def _extract_name_pattern(self, query: str, frase_similar: str, similarity: float) -> Optional[Dict]:
-        """
-        Detecta patrones como "Me llamo [NOMBRE]" o "Mi nombre es [NOMBRE]"
-        y extrae el nombre para deletrearlo.
-
-        Args:
-            query: Query original del usuario
-            frase_similar: Frase similar encontrada en el dataset
-            similarity: Similitud calculada
-
-        Returns:
-            Diccionario con información del nombre extraído o None si no aplica
-        """
-        from .preprocess import spell_out_text, normalize_leet_speak, normalize_text
-
-        # Solo aplicar si la frase similar es "Me llamo" y tiene similitud alta
-        frase_normalizada = normalize_text(frase_similar)
-        if frase_normalizada not in ["me llamo", "como te llamas"]:
-            return None
-
-        # Solo aplicar si la similitud es suficientemente alta (>0.80 para Grupo B)
-        # Threshold más bajo para detectar variantes como "Mi nombre es"
-        if similarity < 0.80:
-            return None
-
-        # Normalizar query
-        query_normalizado = normalize_text(query)
-        query_words = query_normalizado.split()
-
-        # Patrones a detectar: "me llamo X", "mi nombre es X", "soy X"
-        nombre = None
-        patrones = [
-            (["me", "llamo"], 2),           # "me llamo [NOMBRE]"
-            (["mi", "nombre", "es"], 3),    # "mi nombre es [NOMBRE]"
-            (["soy"], 1),                    # "soy [NOMBRE]"
-        ]
-
-        for patron, inicio in patrones:
-            # Verificar si la query comienza con el patrón
-            if len(query_words) > len(patron):
-                if query_words[:len(patron)] == patron:
-                    # Extraer todo después del patrón como nombre
-                    nombre_words = query_words[len(patron):]
-                    nombre = " ".join(nombre_words)
-                    break
-
-        # Si no se detectó nombre, no aplicar
-        if not nombre:
-            return None
-
-        # Validar que el nombre extraído parece un nombre:
-        # 1. Tiene al menos 2 caracteres
-        # 2. No es una palabra común del dataset
-        if len(nombre) < 2:
-            return None
-
-        # Lista de palabras comunes que NO son nombres
-        palabras_comunes = {
-            'hola', 'gracias', 'bien', 'mal', 'si', 'no', 'vale', 'ok',
-            'ayuda', 'auxilio', 'socorro', 'doctor', 'hospital', 'urgente'
-        }
-        if nombre in palabras_comunes:
-            return None
-
-        # Normalizar leet speak antes de deletrear
-        # Esto maneja casos como "M4ri@" -> "Maria"
-        # Extraer el nombre original de la query (con mayúsculas y caracteres especiales)
-        query_words_original = query.split()
-        nombre_words_normalized = nombre.split()
-
-        # Encontrar la posición donde empieza el nombre en la query normalizada
-        nombre_start_idx = None
-        for i in range(len(query_words) - len(nombre_words_normalized) + 1):
-            if query_words[i:i + len(nombre_words_normalized)] == nombre_words_normalized:
-                nombre_start_idx = i
-                break
-
-        # Extraer el nombre original con la misma cantidad de palabras
-        if nombre_start_idx is not None and nombre_start_idx < len(query_words_original):
-            nombre_original_words = query_words_original[nombre_start_idx:nombre_start_idx + len(nombre_words_normalized)]
-            nombre_original = " ".join(nombre_original_words)
-            nombre_normalized = normalize_leet_speak(nombre_original)
-        else:
-            nombre_normalized = nombre
-
-        # Deletrear el nombre
-        deletreo_list = spell_out_text(nombre_normalized, include_spaces=False)
-
-        self.logger.info(
-            f"Patrón de nombre detectado: query='{query}', "
-            f"nombre_extraido='{nombre_normalized}', deletreo={deletreo_list}"
-        )
-
-        return {
-            "nombre": nombre_normalized,
-            "deletreo": deletreo_list
-        }
-
     def search_similar_phrase(self, query: str) -> Dict:
         """
         Busca la frase más similar usando estrategia mejorada.
@@ -588,25 +490,6 @@ class ImprovedPhraseMatcher:
                 "deletreo_activado": True,
                 "deletreo": deletreo_list,
                 "total_caracteres": len(deletreo_list)
-            }
-
-        # VALIDACIÓN ESPECIAL: Detectar patrones "Me llamo + nombre"
-        # Esto maneja casos como "Mi nombre es Pedro", "Me llamo Juan"
-        nombre_info = self._extract_name_pattern(query, frase, similarity)
-        if nombre_info:
-            return {
-                "query": query,
-                "grupo": grupo,
-                "frase_similar": frase,
-                "similitud": round(similarity, 4),
-                "deletreo_activado": False,
-                "deletreo": None,
-                "total_caracteres": None,
-                # Campos nuevos para detección de nombres
-                "nombre_detectado": True,
-                "nombre_extraido": nombre_info["nombre"],
-                "nombre_deletreado": nombre_info["deletreo"],
-                "total_caracteres_nombre": len(nombre_info["deletreo"])
             }
 
         # Si no se activa deletreo, retornar respuesta normal

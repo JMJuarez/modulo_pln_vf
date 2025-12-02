@@ -191,7 +191,6 @@ class QueryResponse(BaseModel):
     spell_urls: List[str] | None = Field(
         None,
         description="Lista de URLs de videos para la secuencia de deletreo si deletreo_activado es true."
-
     )
 
     class Config:
@@ -483,7 +482,6 @@ async def buscar_frase_similar(request: QueryRequest):
             deletreo_activado=resultado["deletreo_activado"],
             deletreo=resultado.get("deletreo"),
             total_caracteres=resultado.get("total_caracteres"),
-
             url_video=url_del_video, 
             spell_urls=spell_urls_list # Usa la variable que ya inicializamos/asignamos
         )
